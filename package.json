@@ -1,0 +1,22 @@
+{
+  "name": "wearethewordserver",
+  "version": "1.0.0",
+  "description": "The server portion for Just One party game",
+  "main": "server.ts",
+  "scripts": {
+    "test": "npm run test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emilabraham/weAreTheWordServer.git"
+  },
+  "keywords": [
+    "game"
+  ],
+  "author": "Emil Abraham",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/emilabraham/weAreTheWordServer/issues"
+  },
+  "homepage": "https://github.com/emilabraham/weAreTheWordServer#readme"
+}
