@@ -1,2 +1,2 @@
-[x] Connect locally
-[] Convert Room.js to typescript
+- [x] Connect locally
+- [] Convert Room.js to typescript
