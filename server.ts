@@ -1,3 +1,4 @@
+const Room = require("./Room");
 import express from "express";
 import path from "path";
 const app = express();
@@ -10,7 +11,13 @@ app.get("*", (req: any, res: any) => {
 });
 
 const http = require("http").createServer(app);
-const io = require("socket.io")(http);
+// const io = require("socket.io")(http);
+// TODO: Should probably get rid of this for production
+const io = require("socket.io")(http, {
+  cors: {
+    origin: "http://localhost:3000",
+  }
+});
 
 let clients: any = {};
 let rooms: any = {};
@@ -42,7 +49,7 @@ io.on("connection", (socket: any) => {
       room = rooms[roomName].room;
     } else {
       room = "temp";
-      // room = new Room(io, roomName);
+      room = new Room(io, roomName);
       rooms[roomName] = { room: room, players: 0 };
     }
   });
