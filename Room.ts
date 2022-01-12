@@ -1,16 +1,33 @@
 const words = require("./beta.json")["words"];
 
-function randRange(min, max) {
+function randRange(min: number, max: number) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-function equivalent(s1, s2) {
+//TODO Fix this type. Should be string
+function equivalent(s1: string, s2: any) {
   if (!s1 || !s2) return false;
   return s1.trim().toLowerCase() === s2.trim().toLowerCase();
 }
 
 class Room {
-  constructor(io, roomName) {
+  io: any; //TODO Can I even type this?
+  roomName: string;
+  roundId: number;
+  correct: number; 
+  wrong: number;
+  activePlayer: any; //TODO type this
+  clues: any; //TODO type this
+  guess: string | undefined;
+  judgment: any | undefined; //TODO type this
+  pastWords: any; //TODO type this
+  phase: "wait" | "clue" | "eliminate" | "guess" | "judge" | "end";
+  playerOrder: any[]; // TODO type this. I believe it's a string.
+  players: any; //TODO type this
+  spectators: any; //TODO type this
+  word: string;
+
+  constructor(io: any, roomName: any) {
     this.io = io;
     this.roomName = roomName;
     
@@ -27,7 +44,7 @@ class Room {
     this.playerOrder = [];
     this.players = {}; // of name => {id, status}
     this.spectators = [];
-    this.word = undefined;
+    this.word = "";
   }
 
   // players
@@ -36,7 +53,8 @@ class Room {
     this.io.to(this.roomName).emit("players", this.players, this.playerOrder, this.spectators);
   }
 
-  newPlayer(name, socketId) {
+  //TODO I think socketId might be a string?
+  newPlayer(name: string, socketId: any) {
     let oldId = undefined;
     if (name in this.players) {
       oldId = this.players[name].id;
@@ -56,30 +74,32 @@ class Room {
     return oldId;
   }
 
-  addSpectator(socketId) {
+  //TODO I think socketId might be a string?
+  addSpectator(socketId: any) {
     this.spectators.push(socketId);
     this.sendPlayers();
   }
 
-  disconnectSocket(name, socketId) {
+  //TODO I think socketId might be a string?
+  disconnectSocket(name: string, socketId: any) {
     if (name in this.players && this.players[name].id === socketId) {
       this.players[name].status = "disconnected";
       this.sendPlayers();
       return true;
     } else {
-      this.spectators = this.spectators.filter(id => id !== socketId);
+      this.spectators = this.spectators.filter((id: any) => id !== socketId);
       this.sendPlayers();
       return false;
     }
   }
 
-  kickPlayer(name) {
+  kickPlayer(name: string) {
     if (!(name in this.players)) return false;
     
     this.io.to(this.players[name].id).emit("phase", "disconnected");
-    if (name === this.activePlayer) this.startPhase("clue");
+    if (name === this.activePlayer) this.startPhase("clue", undefined);
     this.playerOrder = this.playerOrder.filter(name_ => name_ !== name);
-    this.handleClue();
+    this.handleClue(undefined, undefined);
     delete this.players[name];
     this.sendPlayers();
     return true;
@@ -91,7 +111,8 @@ class Room {
       ids.push(this.players[name].id);
       this.kickPlayer(name);
     }
-    this.spectators.map((id) => {
+    //TODO I think id might be a string?
+    this.spectators.map((id: any) => {
       ids.push(id);
       this.io.to(id).emit("phase", "disconnected")
     });
@@ -100,38 +121,47 @@ class Room {
 
   // game
 
-  toActive(event, data) {
+  //TODO type this
+  toActive(event: any, data: any) {
     if (this.activePlayer in this.players) {
       this.io.to(this.players[this.activePlayer].id).emit(event, data);
     }
   }
 
-  toInactive(event, data) {
+  //TODO type this
+  toInactive(event: any, data: any) {
     this.playerOrder.map(name => {
       if (name !== this.activePlayer) {
         this.io.to(this.players[name].id).emit(event, data);
       }
     });
-    this.spectators.map(id => {
+    //TODO I think id might be a string?
+    this.spectators.map((id: any) => {
       this.io.to(id).emit(event, data);
     })
   }
 
   blindClues() {
-    const newClues = Object.fromEntries(
-      Object.entries(this.clues).map(([name, {clue, visible}]) => 
-        [name, {clue: Boolean(clue), visible: visible}]
-      )
-    );
+    //TODO type this
+    // const newClues = Object.fromEntries(
+    //   Object.entries(this.clues).map(([name, {clue, visible}]) => 
+    //     [name, {clue: Boolean(clue), visible: visible}]
+    //   )
+    // );
+    const newClues: any[] = []
     return newClues;
   }
 
   hiddenClues() {
-    return Object.fromEntries(
-      Object.entries(this.clues).map(([name, {clue, visible}]) => 
-        [name, {clue: visible && clue, visible: visible}]
-      )
-    );
+    //TODO type this
+    // return Object.fromEntries(
+    //   Object.entries(this.clues).map(([name, {clue, visible}]) => 
+    //     [name, {clue: visible && clue, visible: visible}]
+    //   )
+    // );
+
+    const newClues: any[] = []
+    return newClues;
   }
 
   sendClues() {
@@ -168,7 +198,8 @@ class Room {
     this.io.to(this.roomName).emit("score", this.correct, this.wrong);
   }
 
-  sendState(name, socket) {
+  //TODO type this
+  sendState(name: string, socket: any) {
     const { phase } = this;
     socket.emit("phase", phase, this.roundId, this.activePlayer);
     socket.emit("score", this.correct, this.wrong);
@@ -195,47 +226,49 @@ class Room {
     if (phase === "end") socket.emit("judgment", this.judgment);
   }
 
-  handleClue(name, clue) {
+  handleClue(name: any, clue: any) {
     if (this.phase !== "clue") return;
     if (name in this.clues) this.clues[name].clue = clue;
     this.sendClues();
     if (this.playerOrder.filter((name_) => {
       return (name_ !== this.activePlayer) && !this.clues[name_].clue;
     }).length === 0) {
-      this.startPhase("eliminate");
+      this.startPhase("eliminate", undefined);
     }
   }
 
-  toggleClue(name) {
+  toggleClue(name: string) {
     this.clues[name].visible = !this.clues[name].visible;
     this.sendClues();
   }
 
-  handleGuess(guess) {
+  handleGuess(guess: string) {
     if (this.phase === "guess") {
       this.guess = guess;
       this.sendGuess();
-      this.startPhase("judge");
+      this.startPhase("judge", undefined);
       if (equivalent(guess, this.word)) this.handleJudge(true);
     }
   }
 
-  handleJudge(judgment) {
+  //TODO type this
+  handleJudge(judgment: any) {
     if (this.phase === "judge") {
       this.judgment = judgment;
       judgment ? this.correct += 1 : this.wrong += 1;
       this.sendJudgment();
       this.sendScore();
-      this.startPhase("end");
+      this.startPhase("end", undefined);
     }
   }
 
-  softStartPhase(phase, id_) {
+  //TODO type this
+  softStartPhase(phase: any, id_: any) {
     if (phase === "clue" && this.phase !== "wait" && this.phase !== "end") return;
     this.startPhase(phase, id_);
   }
 
-  startPhase(phase, id_) {
+  startPhase(phase: any, id_: any) {
     if (phase !== "clue" && this.phase === phase) return;
     if (id_ && this.roundId !== id_) return;
     this.phase = phase;
