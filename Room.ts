@@ -1,4 +1,5 @@
 const words = require("./beta.json")["words"];
+import { Phase } from "./types"
 
 function randRange(min: number, max: number) {
   return Math.floor(Math.random() * (max - min)) + min;
@@ -21,7 +22,7 @@ class Room {
   guess: string | undefined;
   judgment: any | undefined; //TODO type this
   pastWords: any; //TODO type this
-  phase: "wait" | "clue" | "eliminate" | "guess" | "judge" | "end";
+  phase: Phase;
   playerOrder: any[]; // TODO type this. I believe it's a string.
   players: any; //TODO type this
   spectators: any; //TODO type this
@@ -40,7 +41,7 @@ class Room {
     this.guess = undefined;
     this.judgment = undefined;
     this.pastWords = {}; // word -> true
-    this.phase = "wait"; // "clue", "eliminate", "guess", "judge", "end"
+    this.phase = Phase.WAIT;
     this.playerOrder = [];
     this.players = {}; // of name => {id, status}
     this.spectators = [];
@@ -97,7 +98,7 @@ class Room {
     if (!(name in this.players)) return false;
     
     this.io.to(this.players[name].id).emit("phase", "disconnected");
-    if (name === this.activePlayer) this.startPhase("clue", undefined);
+    if (name === this.activePlayer) this.startPhase(Phase.CLUE, undefined);
     this.playerOrder = this.playerOrder.filter(name_ => name_ !== name);
     this.handleClue(undefined, undefined);
     delete this.players[name];
@@ -166,12 +167,12 @@ class Room {
 
   sendClues() {
     const { phase } = this;
-    if (phase === "clue") {
+    if (phase === Phase.CLUE) {
       this.io.to(this.roomName).emit("clues", this.blindClues());
-    } else if (phase === "eliminate") {
+    } else if (phase === Phase.ELIMINATE) {
       this.toActive("clues", this.blindClues());
       this.toInactive("clues", this.clues);
-    } else if (phase === "guess" || phase === "judge" || phase === "end") {
+    } else if (phase === Phase.GUESS || phase === Phase.JUDGE || phase === Phase.END) {
       this.toActive("clues", this.hiddenClues());
       this.toInactive("clues", this.clues);
     }
@@ -203,16 +204,16 @@ class Room {
     const { phase } = this;
     socket.emit("phase", phase, this.roundId, this.activePlayer);
     socket.emit("score", this.correct, this.wrong);
-    if (phase === "wait") return;
+    if (phase === Phase.WAIT) return;
     let clues = this.clues;
-    if (phase === "clue") {
+    if (phase === Phase.CLUE) {
       clues = this.blindClues();
       if (name in this.clues && this.clues[name].clue) socket.emit("myClue", this.clues[name].clue);
     }
     if (name === this.activePlayer) {
-      if (phase === "eliminate") {
+      if (phase === Phase.ELIMINATE) {
         clues = this.blindClues();
-      } else if (phase === "guess" || phase === "judge" || phase === "end") {
+      } else if (phase === Phase.GUESS || phase === Phase.JUDGE || phase === Phase.END) {
         clues = this.hiddenClues();
       }
       socket.emit("word", "");
@@ -220,20 +221,20 @@ class Room {
       socket.emit("word", this.word);
     }
     socket.emit("clues", clues);
-    if (phase === "judge" || phase === "end") {
+    if (phase === Phase.JUDGE || phase === Phase.END) {
       socket.emit("guess", this.guess);
     }
-    if (phase === "end") socket.emit("judgment", this.judgment);
+    if (phase === Phase.END) socket.emit("judgment", this.judgment);
   }
 
   handleClue(name: any, clue: any) {
-    if (this.phase !== "clue") return;
+    if (this.phase !== Phase.CLUE) return;
     if (name in this.clues) this.clues[name].clue = clue;
     this.sendClues();
     if (this.playerOrder.filter((name_) => {
       return (name_ !== this.activePlayer) && !this.clues[name_].clue;
     }).length === 0) {
-      this.startPhase("eliminate", undefined);
+      this.startPhase(Phase.ELIMINATE, undefined);
     }
   }
 
@@ -243,37 +244,37 @@ class Room {
   }
 
   handleGuess(guess: string) {
-    if (this.phase === "guess") {
+    if (this.phase === Phase.GUESS) {
       this.guess = guess;
       this.sendGuess();
-      this.startPhase("judge", undefined);
+      this.startPhase(Phase.JUDGE, undefined);
       if (equivalent(guess, this.word)) this.handleJudge(true);
     }
   }
 
   //TODO type this
   handleJudge(judgment: any) {
-    if (this.phase === "judge") {
+    if (this.phase === Phase.JUDGE) {
       this.judgment = judgment;
       judgment ? this.correct += 1 : this.wrong += 1;
       this.sendJudgment();
       this.sendScore();
-      this.startPhase("end", undefined);
+      this.startPhase(Phase.END, undefined);
     }
   }
 
   //TODO type this
   softStartPhase(phase: any, id_: any) {
-    if (phase === "clue" && this.phase !== "wait" && this.phase !== "end") return;
+    if (phase === Phase.CLUE && this.phase !== Phase.WAIT && this.phase !== Phase.END) return;
     this.startPhase(phase, id_);
   }
 
-  startPhase(phase: any, id_: any) {
-    if (phase !== "clue" && this.phase === phase) return;
+  startPhase(phase: Phase, id_: any) {
+    if (phase !== Phase.CLUE && this.phase === phase) return;
     if (id_ && this.roundId !== id_) return;
     this.phase = phase;
 
-    if (phase === "clue") {
+    if (phase === Phase.CLUE) {
       if (this.activePlayer) {
         // reveal everything from previous round
         this.toActive("word", this.word);
@@ -296,7 +297,7 @@ class Room {
       this.sendPhase();
       this.sendClues();
       this.sendWord();
-    } else if (phase === "eliminate") {
+    } else if (phase === Phase.ELIMINATE) {
       this.playerOrder.map(name => {
         const clue = this.clues[name].clue;
         if (!clue) return;
@@ -306,7 +307,7 @@ class Room {
       });
       this.sendPhase();
       this.sendClues();
-    } else if (phase === "guess") {
+    } else if (phase === Phase.GUESS) {
       this.sendPhase();
       this.sendClues();
     }
