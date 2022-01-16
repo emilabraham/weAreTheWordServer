@@ -5,8 +5,7 @@ function randRange(min: number, max: number) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-//TODO Fix this type. Should be string
-function equivalent(s1: string, s2: any) {
+function equivalent(s1: string, s2: string) {
   if (!s1 || !s2) return false;
   return s1.trim().toLowerCase() === s2.trim().toLowerCase();
 }
@@ -17,7 +16,7 @@ class Room {
   roundId: number;
   correct: number; 
   wrong: number;
-  activePlayer: any; //TODO type this
+  activePlayer: string | undefined;
   clues: any; //TODO type this
   guess: string | undefined;
   judgment: any | undefined; //TODO type this
@@ -124,7 +123,7 @@ class Room {
 
   //TODO type this
   toActive(event: any, data: any) {
-    if (this.activePlayer in this.players) {
+    if (this.activePlayer && this.activePlayer in this.players) {
       this.io.to(this.players[this.activePlayer].id).emit(event, data);
     }
   }
