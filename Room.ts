@@ -1,11 +1,11 @@
 const words = require("./beta.json")["words"];
-import { Phase } from "./types"
+import { ClueArray, Phase } from "./types"
 
 function randRange(min: number, max: number) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-function equivalent(s1: string, s2: string) {
+function equivalent(s1: string | null, s2: string | null) {
   if (!s1 || !s2) return false;
   return s1.trim().toLowerCase() === s2.trim().toLowerCase();
 }
@@ -17,7 +17,7 @@ class Room {
   correct: number; 
   wrong: number;
   activePlayer: string | undefined;
-  clues: any; //TODO type this
+  clues: ClueArray;
   guess: string | undefined;
   judgment: any | undefined; //TODO type this
   pastWords: any; //TODO type this
@@ -141,27 +141,20 @@ class Room {
     })
   }
 
-  blindClues() {
-    //TODO type this
-    // const newClues = Object.fromEntries(
-    //   Object.entries(this.clues).map(([name, {clue, visible}]) => 
-    //     [name, {clue: Boolean(clue), visible: visible}]
-    //   )
-    // );
-    const newClues: any[] = []
-    return newClues;
+  blindClues(): ClueArray {
+    return Object.fromEntries(
+      Object.entries(this.clues).map(([name, {clue, visible}]) =>
+        [name, {clue: Boolean(clue), visible: visible}]
+      )
+    );
   }
 
-  hiddenClues() {
-    //TODO type this
-    // return Object.fromEntries(
-    //   Object.entries(this.clues).map(([name, {clue, visible}]) => 
-    //     [name, {clue: visible && clue, visible: visible}]
-    //   )
-    // );
-
-    const newClues: any[] = []
-    return newClues;
+  hiddenClues(): ClueArray {
+    return Object.fromEntries(
+      Object.entries(this.clues).map(([name, {clue, visible}]) =>
+        [name, {clue: visible && clue, visible: visible}]
+      )
+    );
   }
 
   sendClues() {
@@ -300,7 +293,7 @@ class Room {
       this.playerOrder.map(name => {
         const clue = this.clues[name].clue;
         if (!clue) return;
-        if (this.playerOrder.filter(name_ => equivalent(clue, this.clues[name_].clue)).length > 1) {
+        if (this.playerOrder.filter(name_ => equivalent(clue as string, this.clues[name_].clue as string)).length > 1) {
           this.toggleClue(name);
         }
       });
