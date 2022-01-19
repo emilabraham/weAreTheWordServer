@@ -19,7 +19,7 @@ class Room {
   activePlayer: string | undefined;
   clues: ClueArray;
   guess: string | undefined;
-  judgment: any | undefined; //TODO type this
+  judgment: boolean | undefined;
   pastWords: any; //TODO type this
   phase: Phase;
   playerOrder: any[]; // TODO type this. I believe it's a string.
@@ -245,7 +245,7 @@ class Room {
   }
 
   //TODO type this
-  handleJudge(judgment: any) {
+  handleJudge(judgment: boolean) {
     if (this.phase === Phase.JUDGE) {
       this.judgment = judgment;
       judgment ? this.correct += 1 : this.wrong += 1;
