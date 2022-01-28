@@ -1,5 +1,5 @@
 const words = require("./beta.json")["words"];
-import { ClueArray, Phase } from "./types"
+import { ClueArray, PastWordsArray, Phase, PlayerArray } from "./types"
 
 function randRange(min: number, max: number) {
   return Math.floor(Math.random() * (max - min)) + min;
@@ -20,10 +20,10 @@ class Room {
   clues: ClueArray;
   guess: string | undefined;
   judgment: boolean | undefined;
-  pastWords: any; //TODO type this
+  pastWords: PastWordsArray;
   phase: Phase;
-  playerOrder: any[]; // TODO type this. I believe it's a string.
-  players: any; //TODO type this
+  playerOrder: string[];
+  players: PlayerArray;
   spectators: any; //TODO type this
   word: string;
 
@@ -36,13 +36,13 @@ class Room {
     this.wrong = 0;
 
     this.activePlayer = undefined;
-    this.clues = {}; // player -> {clue, visible}
+    this.clues = {};
     this.guess = undefined;
     this.judgment = undefined;
-    this.pastWords = {}; // word -> true
+    this.pastWords = {};
     this.phase = Phase.WAIT;
     this.playerOrder = [];
-    this.players = {}; // of name => {id, status}
+    this.players = {};
     this.spectators = [];
     this.word = "";
   }
